@@ -9,33 +9,48 @@ import {
 } from "firebase/firestore";
 import { app } from "../../firebaseConfig";
 import LatestItemList from "../Components/HomeScreen/LatestItemList";
+import { useUser } from "@clerk/clerk-expo";
+import { useNavigation } from "@react-navigation/native";
 
 const ExploreScreen = () => {
   const db = getFirestore(app);
 
   const [productList, setProductList] = useState([]);
+  const { user } = useUser();
+
+  console.log("productList", productList);
+
+  const navigation = useNavigation();
 
   useEffect(() => {
-    getAllProducts();
-  }, []);
+    if (user) {
+      getAllProducts();
+      const unsubscribe = navigation.addListener("focus", () => {
+        getAllProducts();
+      });
+      return unsubscribe;
+    }
+  }, [user, navigation]);
 
   const getAllProducts = async () => {
-    setProductList([]);
     try {
       const q = query(collection(db, "UserPost"), orderBy("createdAt", "desc"));
       const snapshot = await getDocs(q);
 
+      const products = [];
       snapshot.forEach((doc) => {
-        console.log(doc.data());
-        setProductList((productList) => [productList, doc.data()]);
+        console.log("Fetched document:", doc.id, doc.data());
+        products.push(doc.data());
       });
+      console.log("Total products fetched:", products.length);
+      setProductList(products);
     } catch (error) {
       console.error("Error fetching documents: ", error);
     }
   };
 
   return (
-    <ScrollView style={{ padding: 20, paddingVertical: 32, flex: 1 }}>
+    <ScrollView style={{ padding: 20, paddingVertical: 32 }}>
       <Text style={{ fontSize: 30, fontWeight: "bold" }}>Explore More</Text>
       <LatestItemList latestItemList={productList} />
     </ScrollView>

@@ -8,6 +8,7 @@ import {
   getFirestore,
   query,
   orderBy,
+  onSnapshot,
 } from "firebase/firestore";
 import Categories from "../Components/HomeScreen/Categories";
 import { app } from "../../firebaseConfig";
@@ -56,18 +57,19 @@ const HomeScreen = () => {
     }
   };
 
-  const getLatestItemList = async () => {
-    try {
-      const latestItemsQuery = query(
-        collection(db, "UserPost"),
-        orderBy("createdAt", "desc")
-      );
-      const querySnapshot = await getDocs(latestItemsQuery);
+  const getLatestItemList = () => {
+    const latestItemsQuery = query(
+      collection(db, "UserPost"),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsubscribe = onSnapshot(latestItemsQuery, (querySnapshot) => {
       const latestItems = querySnapshot.docs.map((doc) => doc.data());
       setLatestItemList(latestItems);
-    } catch (error) {
-      console.error("Error fetching documents:", error);
-    }
+    });
+
+    // Return the unsubscribe function to allow cleanup
+    return unsubscribe;
   };
 
   return (

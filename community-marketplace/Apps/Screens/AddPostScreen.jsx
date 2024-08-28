@@ -18,14 +18,17 @@ import * as ImagePicker from "expo-image-picker";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { storage } from "../../firebaseConfig";
 import { useUser } from "@clerk/clerk-expo";
+import { useNavigation } from "@react-navigation/native";
 
 const AddPostScreen = () => {
   const db = getFirestore();
   const [categoryList, setCategoryList] = useState([]);
   const [image, setImage] = useState(null);
-  const [selectedCategoryName, setSelectedCategoryName] = useState(""); // Store the category name
+  const [selectedCategoryName, setSelectedCategoryName] = useState("");
   const { user } = useUser();
   const [loading, setLoading] = useState(false);
+
+  const navigation = useNavigation();
 
   console.log("selectedCategoryName", selectedCategoryName);
 
@@ -64,7 +67,7 @@ const AddPostScreen = () => {
     }
   };
 
-  const onSubmitMethod = async (value) => {
+  const onSubmitMethod = async (value, { resetForm }) => {
     setLoading(true);
     const resp = await fetch(image);
     const blob = await resp.blob();
@@ -87,7 +90,16 @@ const AddPostScreen = () => {
 
         if (docRef.id) {
           setLoading(false);
-          Alert.alert("Success!!!", "Post Added Successfully.");
+          Alert.alert("Success!!!", "Post Added Successfully.", [
+            {
+              text: "OK",
+              onPress: () => {
+                resetForm();
+                setImage(null);
+                navigation.goBack();
+              },
+            },
+          ]);
         }
       })
       .catch((error) => {
@@ -116,7 +128,9 @@ const AddPostScreen = () => {
             userImage: "",
             createdAt: Date.now(),
           }}
-          onSubmit={(value) => onSubmitMethod(value)}
+          onSubmit={(values, formikActions) =>
+            onSubmitMethod(values, formikActions)
+          }
           validate={(values) => {
             const errors = {};
 
