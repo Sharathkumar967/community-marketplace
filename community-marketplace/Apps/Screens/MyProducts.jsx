@@ -1,4 +1,4 @@
-import { View, Text } from "react-native";
+import { View } from "react-native";
 import React, { useEffect, useState } from "react";
 import {
   collection,
@@ -22,14 +22,12 @@ const MyProducts = () => {
   useEffect(() => {
     if (user) {
       getUserPost();
+      const unsubscribe = navigation.addListener("focus", () => {
+        getUserPost();
+      });
+      return unsubscribe;
     }
-  }, [user]);
-
-  useEffect(() => {
-    navigation.addListener("focus", (e) => {
-      getUserPost();
-    });
-  }, [navigation]);
+  }, [user, navigation]);
 
   const getUserPost = async () => {
     setProductList([]);
@@ -40,9 +38,8 @@ const MyProducts = () => {
       );
       const snapshot = await getDocs(q);
 
-      snapshot.forEach((doc) => {
-        setProductList((productList) => [...productList, doc.data()]);
-      });
+      const products = snapshot.docs.map((doc) => doc.data());
+      setProductList(products);
     } catch (error) {
       console.error("Error fetching user posts: ", error);
     }
